@@ -1,0 +1,118 @@
+tomcat servlet 是什么
+
+应用里面有1000个类, tomcat只关心这1000个类里面, 哪些是sevlet
+
+打出来一个jar包, 部署到tomcat里面去, 会放到webapps这个目录下面去, 启动tomcat会自动解压这个jar包
+
+tomcat启动的时候就是在部署应用, tomcat会找到webapps这个目录, 会认为下面每个文件夹都有一个应用.
+会继续往应用里面找, 找应用下面的 WEB-INF/web.xml 文件, 找出里面定义的servlet, 包括servlet匹配的url
+
+springboot用的内嵌的tomcat, webstarter帮我们配置了前端控制器
+
+
+=============================
+WEB-INF/web.xml
+=============================
+看文件里面定义了哪些servlet:
+<servlet>
+  <servlet-name>servletDemo</servlet-name>
+  <servlet-class>com.zhouyu.ServletDemo</servlet-class>
+</servlet>
+
+看文件里面匹配的url是什么:
+<servlet-mapping>
+  <servlet-name>servletDemo</servlet-name>
+  <url-pattern>servletDemo</url-pattern>
+</servlet-mapping>
+
+
+========================================================================================
+                                            operating system
+                     ┌────────────────────────────────────────────────────────────┐
+                     │                                                            │
+               ┌─────┴─────┐              ┌──────────────┐     ┌──────────────┐   │
+   byteStream  │  8080     ├───┐          │  project1    │     │  project2    │   │
+──────────────►│           │   │          │              │     │              │   │
+               └─────┬─────┘   │          │ ┌──────────┐ │     │ ┌──────────┐ │   │
+                     │         │          │ │servlet1  │ │     │ │servlet3  │ │   │
+               ┌─────┴─────┐   │          │ └──────────┘ │     │ └──────────┘ │   │
+               │  3306     │   │          │              │     │              │   │
+               │           │   │          │ ┌──────────┐ │     │ ┌──────────┐ │   │
+               └─────┬─────┘   │          │ │servlet2  │ │     │ │servlet4  │ │   │
+                     │         │          │ └──────────┘ │     │ └──────────┘ │   │
+               ┌─────┴─────┐   │          │              │     │              │   │
+               │  8848     │   │          └───────▲──────┘     └──────────────┘   │
+               │           │   │                  │                               │
+               └─────┬─────┘   │                  │                               │
+                     │         │                  │                               │
+               ┌─────┴─────┐   │          ┌───────┴───────────────────────────┐   │
+               │  2181     │   │          │  <*/servlet1*:Servlet1>           │   │
+               │           │   └─────────►│  <*/servlet2*:Servlet1>           │   │
+               └─────┬─────┘              │  <*/servlet3*:Servlet1>           │   │
+                     │                    │  <*/servlet4*:Servlet1>           │   │
+                     │                    └───────────────────────────────────┘   │
+                     │                                                            │
+                     │                           Tomcat                           │
+                     └────────────────────────────────────────────────────────────┘
+========================================================================================
+
+tomcat启动监听了8080端口, 端口属于操作系统之上的, 8080被tomcat占用了
+
+如果你对机器 IP:8080  发一份数据, 数据是字节流, 操作系统会把接收的数据交给tomcat处理
+
+tomcat接收到这个请求会看当前这个请求和哪个servlet匹配, 我会按照你请求的url去匹配, 一个tomcat里面可能有多个项目, 我只关心你定义了哪些servlet
+
+
+
+
+public class ServletDemo extends HttpServlet {
+  // doGet()
+
+  @Override
+  protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
+    resp.getWriter().println("hello, zhouyu");
+  }
+}
+
+1. 我们定义的servlet doGet, doPost是怎么被调用的
+tomcat首先要把字节流转化称为一个HttpServletRequest req对象,
+
+那么，Tomcat接收到数据并解析为HttpServletRequest对象后，就直接把请求交给Servlet了吗?
+
+
+1.假如，现在有一段逻辑，想让多个Servlet公用，就像切面一下，我们希望在请求被这些Servlet处理之前，能先执行公共逻辑。
+2.假如，现在有一段逻辑，想让多个应用内的Servlet公用，就像切面一下，我们希望在请求被这些应用处理之前，能先执行公共逻辑。
+3.我们知道，不同的域名可以对应同一个IP地址，对应同-个机器，那么我希望Tomcat能根据不同的域名做不同的处理
+4.如果Tomcat支持多域名，那么我希望能使得这多个域名能共享某段逻辑
+
+可能上面这四种假设，大家会有点懵，没关系，请直接往下面看，在Tomcat中存 在四大Servlet容器:
+1. Engine:直接理解为一个Tomcat即可，一个Tomcat- 个Engine
+2. Host: -个Host表示一个虚拟服务器，可以给每个Host配置一个域名
+3. Context:一个Context就是-个应用，-个项目
+4. Wrapper:一个Wrapper表 示一个Servlet的包装， Wrapper在后文详解
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+todo: 什么是servlet 什么又是fastCGI
+
+
+
+
+
+
+
+
+
